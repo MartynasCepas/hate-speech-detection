@@ -7,6 +7,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 import warnings 
 import Stemmer
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Embedding
+from keras.callbacks import EarlyStopping
 warnings.filterwarnings('ignore')
 
 # constants
@@ -16,6 +21,8 @@ lithuanian_to_ascii_map = {
     'š': 's', 'ų': 'u', 'ū': 'u', 'ž': 'z'
 }
 lithuanian_stemmer = Stemmer.Stemmer('lithuanian')
+MAX_NB_WORDS = 10000  # defines the max number of words to keep in the vocabulary
+MAX_SEQUENCE_LENGTH = 100  # defines the max length of the sequences
 
 with open(stopwords_path, 'r', encoding='utf-8') as file:
     lithuanian_stopwords = file.read().splitlines()
@@ -87,21 +94,27 @@ y = train['label']
 # Split the dataset into training and validation sets
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15, random_state=0)
 
-# Feature extraction: Transform text data into TF-IDF features
-vectorizer = TfidfVectorizer(lowercase=True, max_features=10000, ngram_range=(1,2))
-X_train_tfidf = vectorizer.fit_transform(X_train)
-X_val_tfidf = vectorizer.transform(X_val)
+# Tokenization and Sequence Padding
+tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
+tokenizer.fit_on_texts(X_train)
+X_train_seq = tokenizer.texts_to_sequences(X_train)
+X_train_pad = pad_sequences(X_train_seq, maxlen=MAX_SEQUENCE_LENGTH)
+X_val_seq = tokenizer.texts_to_sequences(X_val)
+X_val_pad = pad_sequences(X_val_seq, maxlen=MAX_SEQUENCE_LENGTH)
 
-# Initialize and train the logistic regression model
-logreg = LogisticRegression(random_state=0)
-logreg.fit(X_train_tfidf, y_train)
+# LSTM Model Definition
+model = Sequential()
+model.add(Embedding(MAX_NB_WORDS, 128, input_length=MAX_SEQUENCE_LENGTH))
+model.add(LSTM(64, dropout=0.2, recurrent_dropout=0.2))
+model.add(Dense(1, activation='sigmoid'))
 
-# Predict on the validation set
-y_pred_val = logreg.predict(X_val_tfidf)
+# Compile the model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# Fit the model
+callbacks = [EarlyStopping(monitor='val_loss', patience=2)]
+model.fit(X_train_pad, y_train, batch_size=32, epochs=2, validation_data=(X_val_pad, y_val), callbacks=callbacks)
 
 # Evaluate the model
-print("Accuracy on validation set:", accuracy_score(y_val, y_pred_val))
-print("Classification Report on validation set:\n", classification_report(y_val, y_pred_val))
-
-# Output the first few rows of the train dataset to confirm preprocessing
-print(train.head())
+scores = model.evaluate(X_val_pad, y_val, verbose=0)
+print("Accuracy on validation set: {:.2f}%".format(scores[1] * 100))
