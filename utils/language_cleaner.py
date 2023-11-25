@@ -2,7 +2,7 @@ from langdetect import detect
 import pandas as pd
 
 # Load the DataFrame
-df = pd.read_csv('datasets/old/train_tweets.csv')
+df = pd.read_csv('datasets/old/train_clean_numeric.csv')
 
 # Initialize counters
 lt_count = 0
@@ -30,7 +30,7 @@ df_lt = pd.DataFrame(lt_rows)
 df_lt.reset_index(drop=True, inplace=True)
 
 # Save the Lithuanian tweets to a new CSV file
-df_lt.to_csv('datasets/old/train_tweets_lt_.csv', header=True, index=False, encoding='utf-8-sig')
+df_lt.to_csv('datasets/lithuanian/train_tweets_lt.csv', header=True, index=False, encoding='utf-8-sig')
 
 print(f"Lithuanian tweets: {lt_count}")
 print(f"English tweets: {en_count}")

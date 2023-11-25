@@ -10,3 +10,5 @@
 /mbart50_many_to_many_model
 /mbart50_many_to_many_tokenizer
 /*.joblib
+/model
+/__pycache__
