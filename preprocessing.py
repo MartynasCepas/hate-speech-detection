@@ -4,11 +4,13 @@ import pandas as pd
 import Stemmer
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.text import tokenizer_from_json
 
 # Define constants
 STOPWORDS_PATH = './data/stopwords.txt'
 SLANG_PATH = './data/slang.json'
 CHAR_MAP_PATH = './data/lithuanian_to_ascii_map.json'
+TOKENIZER_PATH = './model/tokenizer.json'
 
 MAX_NB_WORDS = 10000
 MAX_SEQUENCE_LENGTH = 100
@@ -85,14 +87,16 @@ def preprocess_data(df, text_field):
     return df
 
 def fit_tokenizer(texts):
+    tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
     tokenizer.fit_on_texts(texts)
+    return tokenizer
 
-def tokenize_and_pad(texts):
+def tokenize_and_pad(texts, tokenizer):
     sequences = tokenizer.texts_to_sequences(texts)
     padded_sequences = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
     return padded_sequences
 
-def preprocess_text(text):
+def preprocess_text(text, tokenizer):
     # Apply all cleaning functions
     text = lowercase_text(text)
     text = replace_lithuanian_characters_to_ascii(text, lithuanian_to_ascii_map)
@@ -103,4 +107,10 @@ def preprocess_text(text):
     text = ' '.join(text)
 
     # Tokenize and pad
-    return tokenize_and_pad([text])
+    return tokenize_and_pad([text], tokenizer)
+
+def load_tokenizer():
+    with open(TOKENIZER_PATH, 'r', encoding='utf-8') as f:
+        tokenizer_json = f.read()  # Read the file content as a JSON string
+    tokenizer = tokenizer_from_json(tokenizer_json)
+    return tokenizer

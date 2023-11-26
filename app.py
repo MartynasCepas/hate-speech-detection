@@ -1,28 +1,28 @@
 from flask import Flask, request, jsonify
 from keras.models import load_model
-from preprocessing import tokenize_and_pad
+from preprocessing import preprocess_text, load_tokenizer
 import traceback
-from preprocessing import preprocess_text
 
 app = Flask(__name__)
 MODEL_PATH = './model/hate_speech_model.keras'
 model = None 
 
-def load_model_on_demand():
-    global model
-    if model is None:
-        model = load_model(MODEL_PATH)
-    return model
+model = load_model(MODEL_PATH)
+tokenizer = load_tokenizer()
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        model = load_model_on_demand()
         data = request.get_json(force=True)
         text = data['text']
-        preprocessed_text = preprocess_text(text)
+        print(f"Original text: {text}")  # Log the original text
+
+        preprocessed_text = preprocess_text(text, tokenizer)
+        print(f"Preprocessed text: {preprocessed_text}")  # Log the preprocessed text
+        
         prediction = model.predict(preprocessed_text)
-        print(prediction)
+        print(f"Prediction: {prediction}")  # Log the prediction
+        
         result = 'Hate speech' if prediction[0][0] > 0.5 else 'Not hate speech'
         return jsonify(result=result)
     except Exception as e:
@@ -30,3 +30,6 @@ def predict():
         print(traceback.format_exc())
         # Return an error message
         return jsonify(error=str(e)), 500
+    
+if __name__ == '__main__':
+    app.run(debug=True)

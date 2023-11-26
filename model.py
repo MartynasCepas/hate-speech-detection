@@ -1,6 +1,6 @@
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Embedding
-from keras.callbacks import EarlyStopping
+from keras.layers import LSTM, Dense, Embedding, Dropout, Bidirectional
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 # Constants
 MAX_NB_WORDS = 10000
@@ -16,12 +16,22 @@ PATIENCE = 2
 def build_model():
     model = Sequential()
     model.add(Embedding(MAX_NB_WORDS, EMBEDDING_DIM, input_length=MAX_SEQUENCE_LENGTH))
-    model.add(LSTM(LSTM_UNITS, dropout=DROPOUT_RATE, recurrent_dropout=RECURRENT_DROPOUT))
+    model.add(Bidirectional(LSTM(LSTM_UNITS, return_sequences=True, dropout=DROPOUT_RATE, recurrent_dropout=RECURRENT_DROPOUT)))
+    model.add(Bidirectional(LSTM(LSTM_UNITS, dropout=DROPOUT_RATE, recurrent_dropout=RECURRENT_DROPOUT)))
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
-def train_model(model, X_train_pad, y_train, X_val_pad, y_val):
-    callbacks = [EarlyStopping(monitor='val_loss', patience=PATIENCE)]
-    model.fit(X_train_pad, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, validation_data=(X_val_pad, y_val), callbacks=callbacks)
-    return model
+def train_model(model, X_train_pad, y_train, X_val_pad, y_val, save_path):
+    callbacks = [
+        EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=True),
+        ModelCheckpoint(save_path, save_best_only=True, monitor='val_loss')
+    ]
+    history = model.fit(
+        X_train_pad, y_train,
+        batch_size=BATCH_SIZE,
+        epochs=EPOCHS,
+        validation_data=(X_val_pad, y_val),
+        callbacks=callbacks
+    )
+    return model, history
