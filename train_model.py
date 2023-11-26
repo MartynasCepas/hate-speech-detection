@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 # Constants
 TEST_SPLIT_SIZE = 0.3
-MODEL_SAVE_PATH = './model/hate_speech_model.h5'
+MODEL_SAVE_PATH = './model/hate_speech_model.keras'
 DATA_PATH = './datasets/lithuanian/train_tweets_lt.csv'
 
 def main():

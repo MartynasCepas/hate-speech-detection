@@ -1,0 +1,30 @@
+/* app.component.scss */
+.text-checker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; // Take at least the full height of the viewport
+
+  h2 {
+    font-size: 2rem; // Larger header text
+    margin-bottom: 1rem; // Space below the header
+  }
+
+  textarea {
+    width: 80%; // Use a percentage of the container width
+    max-width: 600px; // Maximum width for the textarea
+    font-size: 1.25rem; // Larger text inside the textarea
+    margin-bottom: 1rem; // Space below the textarea
+  }
+
+  p-button {
+    width: 200px; // Width of the button
+    font-size: 1.25rem; // Larger button text
+  }
+
+  p {
+    font-size: 1.25rem; // Larger paragraph text for results
+    margin-top: 1rem; // Space above the result text
+  }
+}

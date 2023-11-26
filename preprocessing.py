@@ -91,3 +91,16 @@ def tokenize_and_pad(texts):
     sequences = tokenizer.texts_to_sequences(texts)
     padded_sequences = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
     return padded_sequences
+
+def preprocess_text(text):
+    # Apply all cleaning functions
+    text = lowercase_text(text)
+    text = replace_lithuanian_characters_to_ascii(text, lithuanian_to_ascii_map)
+    text = replace_slang(text, slang_dict)
+    text = remove_special_characters(text)
+    text = remove_stopwords(text, lithuanian_stopwords)
+    text = lithuanian_stemmer.stemWords(text.split())
+    text = ' '.join(text)
+
+    # Tokenize and pad
+    return tokenize_and_pad([text])
