@@ -445,6 +445,9 @@ tuoju
 tuosiuose
 tuosius
 turbūt
+turėtų
+turi
+turetu
 už
 užtat
 užvis
