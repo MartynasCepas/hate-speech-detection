@@ -2,12 +2,18 @@ from flask import Flask, request, jsonify
 from keras.models import load_model
 from preprocessing import preprocess_text, load_tokenizer
 import traceback
+from model import f1, precision, recall
 
 app = Flask(__name__)
 MODEL_PATH = './model/hate_speech_model.keras'
 model = None 
 
-model = load_model(MODEL_PATH)
+custom_objects = {
+    'f1': f1,
+    'precision': precision,
+    'recall': recall
+}
+model = load_model(MODEL_PATH, custom_objects=custom_objects)
 tokenizer = load_tokenizer()
 
 @app.route('/predict', methods=['POST'])

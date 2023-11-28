@@ -7,69 +7,68 @@ from sklearn.metrics import confusion_matrix, classification_report, roc_curve, 
 from keras.models import load_model
 from preprocessing import preprocess_data, load_tokenizer, tokenize_and_pad
 from sklearn.metrics import accuracy_score, average_precision_score, precision_recall_curve
+import json
 
-#%%
-# Constants
+def load_history(history_path):
+    with open(history_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+    
 MODEL_SAVE_PATH = './model/hate_speech_model.keras'
 DATA_PATH = './datasets/lithuanian/train_tweets_lt.csv'  
 TEST_SPLIT_SIZE = 0.4
 
-# Load the tokenizer
-tokenizer = load_tokenizer()
-
-# Load and preprocess the dataset
-train_data = pd.read_csv(DATA_PATH)
-X = train_data['tweet']
-y = train_data['label']
-
-# Here you use the same train_test_split with the same random_state to recreate the validation set
-from sklearn.model_selection import train_test_split
-_, X_val, _, y_val = train_test_split(X, y, test_size=TEST_SPLIT_SIZE, random_state=42)
-
-X_val_pad = tokenize_and_pad(X_val, tokenizer)
-
-model = load_model(MODEL_SAVE_PATH)
-
-y_pred = model.predict(X_val_pad)
-y_pred_binary = (y_pred > 0.99).astype('int32')
+history = load_history('./model/history.json')
 
 #%%
-# Function to plot the confusion matrix
-def plot_confusion_matrix(y_true, y_pred, classes):
-    cm = confusion_matrix(y_true, y_pred)
-    df_cm = pd.DataFrame(cm, index=classes, columns=classes)
-    plt.figure(figsize=(10,7))
-    sns.heatmap(df_cm, annot=True, fmt='g')
-    plt.title('Confusion Matrix')
-    plt.ylabel('Actual')
-    plt.xlabel('Predicted')
+# Plot accuracy
+plt.figure(figsize=(8, 4))
+plt.plot(history['accuracy'], label='Training Accuracy')
+plt.plot(history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+#%%
+# Plot loss
+plt.figure(figsize=(8, 4))
+plt.plot(history['loss'], label='Training Loss')
+plt.plot(history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+#%%
+# Plot precision, recall, and F1-score
+if 'precision' in history and 'recall' in history and 'f1' in history:
+    plt.figure(figsize=(8, 4))
+    plt.plot(history['precision'], label='Precision')
+    plt.plot(history['recall'], label='Recall')
+    plt.plot(history['f1'], label='F1-Score')
+    plt.title('Precision, Recall, and F1 Score over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Scores')
+    plt.legend()
     plt.show()
 
-plot_confusion_matrix(y_val, y_pred_binary, classes=['Not Hate Speech', 'Hate Speech'])
-
 #%%
-# Function to plot the ROC curve
-def plot_roc_curve(y_true, y_scores):
-    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-    roc_auc = auc(fpr, tpr)
-    plt.figure()
-    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend(loc='lower right')
-    plt.show()
+# Access the final epoch's metrics
+final_epoch = len(history['val_accuracy'])
 
-plot_roc_curve(y_val, y_pred)
+# Access the final scores from the history
+final_metrics = {
+    'Validation Accuracy': history['val_accuracy'][-1],
+    'Validation Loss': history['val_loss'][-1],
+    'Precision': history['precision'][-1] if 'precision' in history else 'N/A',
+    'Recall': history['recall'][-1] if 'recall' in history else 'N/A',
+    'F1-Score': history['f1'][-1] if 'f1' in history else 'N/A'
+}
 
-#%%
-# Calculate accuracy
-accuracy = accuracy_score(y_val, y_pred_binary)
-print(f'Accuracy: {accuracy:.2f}')
-
-# Calculate average precision
-average_precision = average_precision_score(y_val, y_pred)
-print(f'Average Precision: {average_precision:.2f}')
+# Print the final scores in a table format
+print(f"{'Metric':<25}{'Value':<15}")
+print(f"{'-' * 40}")
+for metric, value in final_metrics.items():
+    print(f"{metric:<25}{value:<15.4f}" if isinstance(value, float) else f"{metric:<25}{value:<15}")

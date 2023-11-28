@@ -41,7 +41,7 @@ def train_model(model, X_train_pad, y_train, X_val_pad, y_val, save_path):
     class_weights_dict = dict(enumerate(class_weights))
 
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=True)
+        EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=False)
     ]
 
     history = model.fit(
@@ -49,8 +49,7 @@ def train_model(model, X_train_pad, y_train, X_val_pad, y_val, save_path):
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         validation_data=(X_val_pad, y_val),
-        callbacks=callbacks,
-        class_weight=class_weights_dict
+        callbacks=callbacks
     )
     return model, history
 

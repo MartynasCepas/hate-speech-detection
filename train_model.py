@@ -5,12 +5,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import json
 import os
+import matplotlib.pyplot as plt
 
 # Constants
 TEST_SPLIT_SIZE = 0.2
 MODEL_SAVE_PATH = './model/hate_speech_model.keras'
 DATA_PATH = './datasets/lithuanian/train_tweets_lt.csv'
 TOKENIZER_PATH = './model/tokenizer.json'
+HISTORY_PATH = './model/history.json'
 
 def main():
     # Load and preprocess the dataset
@@ -40,3 +42,8 @@ def main():
     tokenizer_json = tokenizer.to_json()
     with open(TOKENIZER_PATH, 'w', encoding='utf-8') as f:
         f.write(tokenizer_json)
+
+    if os.path.exists(HISTORY_PATH):
+        os.remove(HISTORY_PATH)
+    with open(HISTORY_PATH, 'w', encoding='utf-8') as f:
+        json.dump(history.history, f)
