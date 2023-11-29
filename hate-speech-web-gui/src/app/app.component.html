@@ -1,6 +1,10 @@
 <div class="text-checker">
   <h2>Patikrinkite tekstą dėl neapykantos kalbos</h2>
   <textarea rows="5" cols="30" pInputTextarea [(ngModel)]="textToCheck"></textarea>
-  <p-button label="Patikrinti" (onClick)="onSubmit()"></p-button>
-  <p *ngIf="result">{{ result }}</p>
+  <div>
+    <p-button [disabled]="!textToCheck" label="Patikrinti" (onClick)="onSubmit()"></p-button>
+  </div>
+  <div *ngIf="result" class="result" [ngClass]="{'hate-speech': isHateSpeech, 'not-hate-speech': !isHateSpeech}">
+    {{ result }}
+  </div>
 </div>

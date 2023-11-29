@@ -19,12 +19,28 @@
   }
 
   p-button {
+    margin: 0 auto; // Center the button
     width: 200px; // Width of the button
     font-size: 1.25rem; // Larger button text
+    margin-bottom: 1rem; // Space below the button
   }
 
-  p {
-    font-size: 1.25rem; // Larger paragraph text for results
+  .result {
+    font-size: 1.5rem; // Larger paragraph text for results
     margin-top: 1rem; // Space above the result text
+    padding: 1rem;
+    border-radius: 5px;
+    color: #fff;
+    text-align: center;
+    width: 80%;
+    max-width: 600px;
+  }
+
+  .hate-speech {
+    background-color: #ff6b6b;
+  }
+
+  .not-hate-speech {
+    background-color: #48c78e;
   }
 }

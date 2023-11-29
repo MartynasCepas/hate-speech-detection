@@ -60,7 +60,7 @@ final_epoch = len(history['val_accuracy'])
 
 # Access the final scores from the history
 final_metrics = {
-    'Validation Accuracy': history['val_accuracy'][-1],
+    'Accuracy': history['val_accuracy'][-1],
     'Validation Loss': history['val_loss'][-1],
     'Precision': history['precision'][-1] if 'precision' in history else 'N/A',
     'Recall': history['recall'][-1] if 'recall' in history else 'N/A',
