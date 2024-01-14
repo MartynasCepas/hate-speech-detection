@@ -11,6 +11,7 @@ STOPWORDS_PATH = './data/stopwords.txt'
 SLANG_PATH = './data/slang.json'
 CHAR_MAP_PATH = './data/lithuanian_to_ascii_map.json'
 TOKENIZER_PATH = './model/tokenizer.json'
+LITHUANIAN_PREFIXES_PATH = './data/prefixes.json'
 
 MAX_NB_WORDS = 10000
 MAX_SEQUENCE_LENGTH = 100
@@ -21,6 +22,8 @@ tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
 # Load data from files
 with open(STOPWORDS_PATH, 'r', encoding='utf-8') as file:
     lithuanian_stopwords = file.read().splitlines()
+with open(LITHUANIAN_PREFIXES_PATH, 'r', encoding='utf-8') as file:
+    lithuanian_prefixes = file.read().splitlines()
 with open(SLANG_PATH, 'r', encoding='utf-8') as file:
     slang_dict = json.load(file)
 with open(CHAR_MAP_PATH, 'r', encoding='utf-8') as file:
@@ -71,6 +74,12 @@ def tokenize_text_to_string(text):
     tokens = tokenize_text(text)
     return ' '.join(tokens)
 
+def remove_prefixes(word, prefix_list):
+    for prefix in prefix_list:
+        if word.startswith(prefix) and len(word) > len(prefix):
+            return word[len(prefix):]
+    return word
+
 # Aggregate all cleaning functions into one
 def clean_text(df, text_field, stopwords_list, slang_dictionary=slang_dict, character_map=lithuanian_to_ascii_map):
     df[text_field] = df[text_field].apply(lowercase_text)
@@ -78,6 +87,7 @@ def clean_text(df, text_field, stopwords_list, slang_dictionary=slang_dict, char
     df[text_field] = df[text_field].apply(replace_slang, slang_dictionary=slang_dictionary)
     df[text_field] = df[text_field].apply(remove_special_characters)
     df[text_field] = df[text_field].apply(remove_stopwords, stopwords_list=stopwords_list)
+    df[text_field] = df[text_field].apply(remove_prefixes, prefix_list=lithuanian_prefixes)
     return df
 
 def preprocess_data(df, text_field):
@@ -103,6 +113,7 @@ def preprocess_text(text, tokenizer):
     text = replace_slang(text, slang_dict)
     text = remove_special_characters(text)
     text = remove_stopwords(text, lithuanian_stopwords)
+    text = ' '.join([remove_prefixes(word, lithuanian_prefixes) for word in text.split()])
     text = lithuanian_stemmer.stemWords(text.split())
     text = ' '.join(text)
 

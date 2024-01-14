@@ -29,7 +29,7 @@ def predict():
         prediction = model.predict(preprocessed_text)
         print(f"Prediction: {prediction}")  # Log the prediction
         
-        result = 'Hate speech' if prediction[0][0] > 0.5 else 'Not hate speech'
+        result = 'Hate speech' if prediction[0][0] > 0.35 else 'Not hate speech'
         return jsonify(result=result)
     except Exception as e:
         # Log the error, which can be viewed in the Flask output
