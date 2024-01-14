@@ -18,12 +18,12 @@ export class AppComponent {
   onSubmit() {
     this.http.post<any>('/predict', { text: this.textToCheck }).subscribe({
       next: (response) => {
-        this.result = response.result;
-        this.isHateSpeech = response.result === "Hate speech";
+        this.isHateSpeech = response.result === 'Hate speech';
+        this.result = this.isHateSpeech ? 'Neapykantos kalba aptikta' : 'Neapykantos kalba neaptikta';
       },
       error: (error) => {
         console.error('Error:', error);
-        this.result = 'Klaida: Nepavyko apdoroti užklausos'; // Display error message
+        this.result = 'Klaida nustatant neapykantos kalbą';
         this.isHateSpeech = false;
       },
       complete: () => console.log('Request completed') // Optional

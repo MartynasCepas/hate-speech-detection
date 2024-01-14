@@ -4,6 +4,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from sklearn.utils.class_weight import compute_class_weight
 import numpy as np
 from keras import backend as K
+from keras.regularizers import l2
 
 # Constants
 MAX_NB_WORDS = 100000
@@ -14,7 +15,7 @@ DROPOUT_RATE = 0.3
 RECURRENT_DROPOUT = 0.3
 BATCH_SIZE = 32
 EPOCHS = 10
-PATIENCE = 4
+PATIENCE = 2
 
 def build_model():
     model = Sequential([
@@ -23,7 +24,7 @@ def build_model():
         # dropout to prevent overfitting
         Dropout(0.5),
         # dense to connect the previous output with current layer
-        Dense(128, activation="relu"),
+        Dense(64, activation="relu", kernel_regularizer=l2(0.01)),  # Reduced complexity and added L2 regularization
         # dropout to prevent overfitting
         Dropout(0.5),
         # this is output layer, with 3 class (0, 1, 2)
@@ -41,7 +42,7 @@ def train_model(model, X_train_pad, y_train, X_val_pad, y_val, save_path):
     class_weights_dict = dict(enumerate(class_weights))
 
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=PATIENCE, restore_best_weights=False)
+        EarlyStopping(monitor='val_accuracy', patience=PATIENCE, restore_best_weights=False)
     ]
 
     history = model.fit(
