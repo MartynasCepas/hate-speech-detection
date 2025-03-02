@@ -24,7 +24,7 @@ export class AppComponent {
       error: (error) => {
         console.error('Error:', error);
         this.result = 'Klaida nustatant neapykantos kalbą';
-        this.isHateSpeech = false;
+        this.isHateSpeech = true;
       },
       complete: () => console.log('Request completed') // Optional
     });

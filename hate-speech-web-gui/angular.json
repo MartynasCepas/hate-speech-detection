@@ -71,7 +71,9 @@
               "buildTarget": "hate-speech-web-gui:build:production"
             },
             "development": {
-              "buildTarget": "hate-speech-web-gui:build:development"
+              "buildTarget": "hate-speech-web-gui:build:development",
+              "host": "0.0.0.0",
+              "disableHostCheck": true
             }
           },
           "defaultConfiguration": "development"
