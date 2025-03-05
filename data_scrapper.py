@@ -20,8 +20,9 @@ logging.basicConfig(
 # Configuration
 # ---------------------------
 MAX_COMMENTS = 5000   # How many total comments to fetch
-MAX_SUBMISSIONS = 10000  # How many submissions to check (higher = slower but more coverage)
+MAX_SUBMISSIONS = 5000  # How many controversial submissions to check
 COMMENT_TREE_EXPANSION = None  # 'None' fetches all comments; 0 = only top-level
+TIME_FILTER = "all"  # Options: "all", "year", "month", "week", "day"
 
 # 1. Fill in your credentials from your Reddit app
 CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
@@ -51,7 +52,7 @@ total_comments_fetched = 0
 def utc_to_datetime(utc_timestamp):
     return datetime.datetime.utcfromtimestamp(utc_timestamp)
 
-logging.info("Starting to scrape subreddit: r/%s", subreddit_name)
+logging.info("Starting to scrape subreddit: r/%s (sorted by CONTROVERSIAL, time filter: %s)", subreddit_name, TIME_FILTER)
 logging.info("Fetching up to %d comments (max submissions to check: %d)", MAX_COMMENTS, MAX_SUBMISSIONS)
 
 submission_count = 0
@@ -67,8 +68,8 @@ with open(submissions_file, mode='w', newline='', encoding='utf-8') as sub_file,
     sub_writer.writerow(["id", "title", "created_utc", "created_dt", "author", "score", "num_comments", "permalink"])
     com_writer.writerow(["comment_id", "submission_id", "author", "body", "created_utc", "created_dt", "score", "permalink"])
 
-    # 4. Crawl submissions sorted by newest (limit=MAX_SUBMISSIONS).
-    for submission in subreddit.new(limit=MAX_SUBMISSIONS):
+    # 4. Crawl submissions sorted by controversial (time_filter defines the range)
+    for submission in subreddit.controversial(time_filter=TIME_FILTER, limit=MAX_SUBMISSIONS):
         submission_count += 1
         submission_created_dt = utc_to_datetime(submission.created_utc)
 
