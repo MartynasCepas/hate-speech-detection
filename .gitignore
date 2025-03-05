@@ -13,3 +13,4 @@
 /model
 /__pycache__
 /exported_steps
+/.env
