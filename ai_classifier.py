@@ -63,19 +63,16 @@ def classify_comment(comment_body: str) -> int:
 def main():
     print("[INFO] Loading CSV: 'datasets/v2/lietuvos_comments.csv' ...")
     df = pd.read_csv("datasets/v2/lietuvos_comments.csv")
-    print(f"[INFO] Successfully loaded {len(df)} rows.")
+    total_rows = len(df)
+    print(f"[INFO] Successfully loaded {total_rows} rows.")
 
-    # Limit for testing so we don't use up tokens on large data
-    limit = 5000 # Adjust or remove once you're ready
-    nrows = min(limit, len(df))
-    print(f"[INFO] Will process up to {nrows} rows.")
-
-    # Classify each comment in the first nrows
-    for i in range(nrows):
+    # Classify all rows
+    for i in range(total_rows):
         comment_text = df.loc[i, "body"]
         # Show a truncated version of comment to avoid printing huge text
         truncated_text = (comment_text[:80] + "...") if len(comment_text) > 80 else comment_text
-        print(f"\n[INFO] Processing row {i+1}/{nrows}")
+        
+        print(f"\n[INFO] Processing row {i+1}/{total_rows}")
         print(f"[INFO] Comment body (truncated): '{truncated_text}'")
 
         label = classify_comment(comment_text)
@@ -83,8 +80,8 @@ def main():
         df.loc[i, "is_hate_speech"] = label
 
     print("\n[INFO] Saving updated DataFrame to 'reddit_data_annotated.csv' ...")
-    df.to_csv("/datasets/v2/reddit_data_annotated.csv", index=False)
-    print(f"[INFO] Annotation complete for {nrows} rows. Results saved to 'reddit_data_annotated.csv'.")
+    df.to_csv("datasets/v2/reddit_data_annotated.csv", index=False)
+    print(f"[INFO] Annotation complete for all {total_rows} rows.")
 
 
 if __name__ == "__main__":
