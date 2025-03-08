@@ -6,19 +6,25 @@ import seaborn as sns
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
 from keras.models import load_model
-from preprocessing import preprocess_data, load_tokenizer, tokenize_and_pad
+from preprocessing import preprocess_data, load_tokenizer, remove_stopwords, tokenize_and_pad
 from sklearn.metrics import accuracy_score, average_precision_score, precision_recall_curve
 from model import f1, precision, recall
 import json
+from wordcloud import WordCloud
+from collections import Counter
+import itertools
 
 def load_history(history_path):
     with open(history_path, 'r', encoding='utf-8') as f:
         return json.load(f)
     
 MODEL_SAVE_PATH = './model/hate_speech_model.keras'
-DATA_PATH = './datasets/lithuanian/train_tweets_lt.csv'  
+DATA_PATH = './datasets/v2/reddit_data_annotated.csv'
 TEST_SPLIT_SIZE = 0.4
+STOPWORDS_PATH = './data/stopwords.txt'
 
+with open(STOPWORDS_PATH, 'r', encoding='utf-8') as file:
+    lithuanian_stopwords = file.read().splitlines()
 history = load_history('./model/history.json')
 
 # Load model
@@ -31,9 +37,21 @@ model = load_model(MODEL_SAVE_PATH, custom_objects=custom_objects)
 
 # Load and preprocess the test dataset
 test_data = pd.read_csv(DATA_PATH)
-test_data = preprocess_data(test_data, 'tweet')
-X_test = test_data['tweet']
-y_test = test_data['label']
+
+hate_speech_series = test_data[test_data['is_hate_speech'] == 1]['body']
+hate_speech_no_stopwords = [remove_stopwords(text, lithuanian_stopwords) for text in hate_speech_series]
+joined_hate_speech = ' '.join(hate_speech_no_stopwords)
+
+wordcloud = WordCloud(width=800, height=400, background_color='white').generate(joined_hate_speech)
+plt.figure(figsize=(10, 5))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.title('Neapykantos kalbos žodžių debesis')
+plt.show()
+
+test_data = preprocess_data(test_data, 'body')
+X_test = test_data['body']
+y_test = test_data['is_hate_speech']
 tokenizer = load_tokenizer()
 X_test_pad = tokenize_and_pad(X_test, tokenizer)
 
@@ -44,22 +62,22 @@ y_pred_classes = np.round(y_pred).astype(int).flatten()
 #%%
 # Plot accuracy
 plt.figure(figsize=(8, 4))
-plt.plot(history['accuracy'], label='Training Accuracy')
-plt.plot(history['val_accuracy'], label='Validation Accuracy')
-plt.title('Training and Validation Accuracy over Epochs')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
+plt.plot(history['accuracy'], label='Mokymo tikslumas')
+plt.plot(history['val_accuracy'], label='Validacijos tikslumas')
+plt.title('Mokymo ir validacijos tikslumas pagal epochas')
+plt.xlabel('Epochos')
+plt.ylabel('Tikslumas')
 plt.legend()
 plt.show()
 
 #%%
 # Plot loss
 plt.figure(figsize=(8, 4))
-plt.plot(history['loss'], label='Training Loss')
-plt.plot(history['val_loss'], label='Validation Loss')
-plt.title('Training and Validation Loss over Epochs')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
+plt.plot(history['loss'], label='Mokymo nuostoliai')
+plt.plot(history['val_loss'], label='Validacijos nuostoliai')
+plt.title('Mokymo ir validacijos nuostoliai pagal epochas')
+plt.xlabel('Epochos')
+plt.ylabel('Nuostoliai')
 plt.legend()
 plt.show()
 
@@ -67,41 +85,30 @@ plt.show()
 # Plot precision, recall, and F1-score
 if 'precision' in history and 'recall' in history and 'f1' in history:
     plt.figure(figsize=(8, 4))
-    plt.plot(history['precision'], label='Precision')
-    plt.plot(history['recall'], label='Recall')
-    plt.plot(history['f1'], label='F1-Score')
-    plt.title('Precision, Recall, and F1 Score over Epochs')
-    plt.xlabel('Epochs')
-    plt.ylabel('Scores')
+    plt.plot(history['precision'], label='Tikslumas')
+    plt.plot(history['recall'], label='Atšaukimas')
+    plt.plot(history['f1'], label='F1-įvertis')
+    plt.title('Tikslumo, atšaukimo ir F1-mato kitimas per epochas')
+    plt.xlabel('Epochos')
+    plt.ylabel('Reikšmės')
     plt.legend()
     plt.show()
 
 #%%
-# Access the final epoch's metrics
-final_epoch = len(history['val_accuracy'])
-
-# Access the final scores from the history
-final_metrics = {
-    'Accuracy': history['val_accuracy'][-1],
-    'Validation Loss': history['val_loss'][-1],
-    'Precision': history['precision'][-1] if 'precision' in history else 'N/A',
-    'Recall': history['recall'][-1] if 'recall' in history else 'N/A',
-    'F1-Score': history['f1'][-1] if 'f1' in history else 'N/A'
-}
-
-# Print the final scores in a table format
-print(f"{'Metric':<25}{'Value':<15}")
-print(f"{'-' * 40}")
-for metric, value in final_metrics.items():
-    print(f"{metric:<25}{value:<15.4f}" if isinstance(value, float) else f"{metric:<25}{value:<15}")
+# Class Distribution
+plt.figure(figsize=(6, 6))
+test_data['is_hate_speech'].value_counts().plot.pie(autopct='%1.1f%%', colors=['lightblue', 'salmon'])
+plt.title('Klasių pasiskirstymas (Neapykantos kalba vs. Ne-neapykantos kalba)')
+plt.ylabel('')
+plt.show()
 
 #%%
 # Print confusion matrix
 cm = confusion_matrix(y_test, y_pred_classes)
 sns.heatmap(cm, annot=True, fmt='d')
-plt.title('Confusion Matrix')
-plt.xlabel('Predicted')
-plt.ylabel('True')
+plt.title('Painiavos matrica')
+plt.xlabel('Prognozuota')
+plt.ylabel('Tikroji')
 plt.show()
 
 #%%
@@ -113,18 +120,18 @@ print(classification_report(y_test, y_pred_classes))
 fpr, tpr, _ = roc_curve(y_test, y_pred)
 roc_auc = auc(fpr, tpr)
 plt.figure()
-plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC kreivė (plotas = {roc_auc:.2f})')
 plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('Receiver Operating Characteristic')
-plt.legend(loc="lower right")
+plt.xlabel('Klaidingai teigiamų rodiklis')
+plt.ylabel('Teisingai teigiamų rodiklis')
+plt.title('Darbinės charakteristikos kreivė (ROC)')
+plt.legend(loc='lower right')
 plt.show()
 
 # Precision-Recall Curve
 precision, recall, _ = precision_recall_curve(y_test, y_pred)
 plt.plot(recall, precision, lw=2, color='blue')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision-Recall Curve')
+plt.xlabel('Atšaukimas')
+plt.ylabel('Tikslumas')
+plt.title('Tikslumo-atšaukimo kreivė')
 plt.show()

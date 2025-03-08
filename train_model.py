@@ -10,18 +10,18 @@ import matplotlib.pyplot as plt
 # Constants
 TEST_SPLIT_SIZE = 0.2
 MODEL_SAVE_PATH = './model/hate_speech_model.keras'
-DATA_PATH = './datasets/lithuanian/train_tweets_lt.csv'
+DATA_PATH = './datasets/v2/reddit_data_annotated.csv'
 TOKENIZER_PATH = './model/tokenizer.json'
 HISTORY_PATH = './model/history.json'
 
 def main():
     # Load and preprocess the dataset
     train_data = pd.read_csv(DATA_PATH)
-    train_data = preprocess_data(train_data, 'tweet')
+    train_data = preprocess_data(train_data, 'body')
 
     # Split the dataset into training and validation sets
-    X = train_data['tweet']
-    y = train_data['label']
+    X = train_data['body']
+    y = train_data['is_hate_speech']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=TEST_SPLIT_SIZE, random_state=42)
 
     # Tokenization and padding
