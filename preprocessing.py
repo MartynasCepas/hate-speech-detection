@@ -1,12 +1,14 @@
+import os
 import re
 import json
 import pandas as pd
 import Stemmer
+import matplotlib.pyplot as plt
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import tokenizer_from_json
 
-# Define constants
+# Constants
 STOPWORDS_PATH = './data/stopwords.txt'
 SLANG_PATH = './data/slang.json'
 CHAR_MAP_PATH = './data/lithuanian_to_ascii_map.json'
@@ -23,16 +25,17 @@ tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
 # Load data from files
 with open(STOPWORDS_PATH, 'r', encoding='utf-8') as file:
     lithuanian_stopwords = file.read().splitlines()
-
 with open(LITHUANIAN_PREFIXES_PATH, 'r', encoding='utf-8') as file:
     lithuanian_prefixes = file.read().splitlines()
-
 with open(SLANG_PATH, 'r', encoding='utf-8') as file:
     slang_dict = json.load(file)
-
 with open(CHAR_MAP_PATH, 'r', encoding='utf-8') as file:
     lithuanian_to_ascii_map = json.load(file)
 
+
+def ensure_export_dir_exists():
+    if not os.path.exists(EXPORT_DIR):
+        os.makedirs(EXPORT_DIR)
 
 def lowercase_text(text):
     return text.lower()
@@ -68,68 +71,67 @@ def tokenize_text_to_string(text):
     tokens = tokenize_text(text)
     return ' '.join(tokens)
 
-def stem_text(df, text_field):
-    def stem_words(text):
-        return " ".join(lithuanian_stemmer.stemWords(text.split()))
-    
-    df[text_field] = df[text_field].apply(stem_words)
-    return df
-
 def clean_text_stepwise(df, text_field):
-    # Lowercase
+    ensure_export_dir_exists()
+
     df[text_field + "_step1_lower"] = df[text_field].apply(lowercase_text)
     df.to_csv(f"{EXPORT_DIR}/step1_lower.csv", index=False, encoding='utf-8')
 
-    # ASCII mapping
+    # STEP 2: Replace Lithuanian characters
     df[text_field + "_step2_ascii"] = df[text_field + "_step1_lower"].apply(
-        replace_lithuanian_characters_to_ascii, 
+        replace_lithuanian_characters_to_ascii,
         character_map=lithuanian_to_ascii_map
     )
     df.to_csv(f"{EXPORT_DIR}/step2_ascii.csv", index=False, encoding='utf-8')
 
-    # Slang replacement
+    # STEP 3: Replace slang
     df[text_field + "_step3_slang"] = df[text_field + "_step2_ascii"].apply(
-        replace_slang, 
+        replace_slang,
         slang_dictionary=slang_dict
     )
     df.to_csv(f"{EXPORT_DIR}/step3_slang.csv", index=False, encoding='utf-8')
 
-    # Remove special characters
-    df[text_field + "_step4_nospecial"] = df[text_field + "_step3_slang"].apply(
-        remove_special_characters
-    )
+    # STEP 4: Remove special characters
+    df[text_field + "_step4_nospecial"] = df[text_field + "_step3_slang"].apply(remove_special_characters)
     df.to_csv(f"{EXPORT_DIR}/step4_nospecial.csv", index=False, encoding='utf-8')
 
-    # Remove stopwords
+    # STEP 5: Remove stopwords
     df[text_field + "_step5_nostop"] = df[text_field + "_step4_nospecial"].apply(
-        remove_stopwords, 
-        stopwords_list=lithuanian_stopwords
+        remove_stopwords, stopwords_list=lithuanian_stopwords
     )
     df.to_csv(f"{EXPORT_DIR}/step5_nostop.csv", index=False, encoding='utf-8')
 
-    # Remove prefixes
+    # STEP 6: Remove prefixes
     df[text_field + "_step6_noprefix"] = df[text_field + "_step5_nostop"].apply(
         lambda x: ' '.join([remove_prefixes(word, lithuanian_prefixes) for word in x.split()])
     )
     df.to_csv(f"{EXPORT_DIR}/step6_noprefix.csv", index=False, encoding='utf-8')
 
-    # Overwrite original column with final transformation from step 6
+    # Overwrite main column with the step 6 result
     df[text_field] = df[text_field + "_step6_noprefix"]
+
+    return df
+
+def stem_text_stepwise(df, text_field):
+    df[text_field + "_step7_stem"] = df[text_field].apply(
+        lambda txt: " ".join(lithuanian_stemmer.stemWords(txt.split()))
+    )
+    df.to_csv(f"{EXPORT_DIR}/step7_stem.csv", index=False, encoding='utf-8')
+    # Overwrite main column with step7 result
+    df[text_field] = df[text_field + "_step7_stem"]
+    return df
+
+def tokenize_text_stepwise(df, text_field):
+    df[text_field + "_step8_tokenized"] = df[text_field].apply(tokenize_text_to_string)
+    df.to_csv(f"{EXPORT_DIR}/step8_tokenized.csv", index=False, encoding='utf-8')
+    # Overwrite main column
+    df[text_field] = df[text_field + "_step8_tokenized"]
     return df
 
 def preprocess_data(df, text_field):
-    # Stepwise cleaning
     df = clean_text_stepwise(df, text_field)
-    df.to_csv(f"{EXPORT_DIR}/step6_cleaned.csv", index=False, encoding='utf-8')
-
-    # Stemming
-    df = stem_text(df, text_field)
-    df.to_csv(f"{EXPORT_DIR}/step7_stemmed.csv", index=False, encoding='utf-8')
-
-    # Tokenize to string
-    df[text_field] = df[text_field].apply(tokenize_text_to_string)
-    df.to_csv(f"{EXPORT_DIR}/step8_tokenized.csv", index=False, encoding='utf-8')
-    
+    df = stem_text_stepwise(df, text_field)        # Step 7
+    df = tokenize_text_stepwise(df, text_field)    # Step 8
     return df
 
 def fit_tokenizer(texts):
