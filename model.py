@@ -11,7 +11,7 @@ MAX_NB_WORDS = 100000
 EMBEDDING_DIM = 200
 MAX_SEQUENCE_LENGTH = 100
 LSTM_UNITS = 64
-DROPOUT_RATE = 0.3
+DROPOUT_RATE = 0.6
 RECURRENT_DROPOUT = 0.3
 BATCH_SIZE = 32
 EPOCHS = 10
@@ -22,11 +22,11 @@ def build_model():
         Embedding(MAX_NB_WORDS, EMBEDDING_DIM, input_length=MAX_SEQUENCE_LENGTH),
         LSTM(LSTM_UNITS, dropout=DROPOUT_RATE, recurrent_dropout=RECURRENT_DROPOUT),
         # dropout to prevent overfitting
-        Dropout(0.5),
+        Dropout(0.6),
         # dense to connect the previous output with current layer
-        Dense(64, activation="relu", kernel_regularizer=l2(0.01)),  # Reduced complexity and added L2 regularization
+        Dense(32, activation="relu", kernel_regularizer=l2(0.03)),  # Reduced complexity and added L2 regularization
         # dropout to prevent overfitting
-        Dropout(0.5),
+        Dropout(0.6),
         # this is output layer, with 3 class (0, 1, 2)
         Dense(1, activation="sigmoid"),
     ])
