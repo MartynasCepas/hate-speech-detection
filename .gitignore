@@ -14,3 +14,9 @@
 /__pycache__
 /exported_steps
 /.env
+/bert_experiment_output
+/bert_experiment_output_no_preprocessing
+/bert_experiment_output_partial_preprocessing
+/litlat_bert_experiment_output_no_preprocessing
+/model_no_preprocessing
+/model_partial_preprocessing

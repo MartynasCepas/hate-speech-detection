@@ -155,6 +155,16 @@ def preprocess_text(text, tokenizer):
     text = ' '.join(text)
     return tokenize_and_pad([text], tokenizer)
 
+def preprocess_data_partial(df, text_field):
+    df[text_field] = df[text_field].str.lower()
+    df[text_field] = df[text_field].apply(remove_special_characters)
+    df[text_field] = df[text_field].apply(tokenize_text_to_string)
+
+    return df
+
+def preprocess_data_none(df, text_field):
+    return df
+
 def load_tokenizer():
     with open(TOKENIZER_PATH, 'r', encoding='utf-8') as f:
         tokenizer_json = f.read()

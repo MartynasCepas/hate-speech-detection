@@ -18,14 +18,14 @@ def load_history(history_path):
     with open(history_path, 'r', encoding='utf-8') as f:
         return json.load(f)
     
-MODEL_SAVE_PATH = './model/hate_speech_model.keras'
+MODEL_SAVE_PATH = './model_no_preprocessing/hate_speech_model.keras'
 DATA_PATH = './datasets/v2/reddit_data_annotated.csv'
 TEST_SPLIT_SIZE = 0.4
 STOPWORDS_PATH = './data/stopwords.txt'
 
 with open(STOPWORDS_PATH, 'r', encoding='utf-8') as file:
     lithuanian_stopwords = file.read().splitlines()
-history = load_history('./model/history.json')
+history = load_history('./model_no_preprocessing/history.json')
 
 # Load model
 custom_objects = {
